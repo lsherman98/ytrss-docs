@@ -1,0 +1,212 @@
+---
+title: "Get Job Status"
+api: "GET https://ytrss.xyz/api/v1/poll/job/{jobId}"
+description: "Get the current status and details of a specific conversion job"
+---
+
+## Overview
+
+Retrieve the current status and details of a specific conversion job. Use this endpoint to monitor job progress.
+
+## Path Parameters
+
+<ParamField path="jobId" type="string" required>
+    The unique identifier of the job to retrieve
+</ParamField>
+
+## Response
+
+The response structure varies depending on the job status:
+
+### Completed Job Response
+
+<ResponseField name="id" type="string">
+    Unique identifier for the job
+</ResponseField>
+
+<ResponseField name="url" type="string">
+    The YouTube URL being converted
+</ResponseField>
+
+<ResponseField name="status" type="string">
+    `SUCCESS`
+</ResponseField>
+
+<ResponseField name="download_endpoint" type="string">
+    Endpoint to download the converted file (only present when status is
+    `SUCCESS`)
+</ResponseField>
+
+<ResponseField name="video_metadata" type="object">
+    Video metadata (only present when status is `SUCCESS`)
+    <Expandable title="video_metadata object">
+        <ResponseField name="title" type="string">
+            Video title
+        </ResponseField>
+        <ResponseField name="description" type="string">
+            Video description
+        </ResponseField>
+        <ResponseField name="duration" type="integer">
+            Video duration in seconds
+        </ResponseField>
+        <ResponseField name="video_id" type="string">
+            YouTube video ID
+        </ResponseField>
+        <ResponseField name="size" type="integer">
+            File size in bytes
+        </ResponseField>
+    </Expandable>
+</ResponseField>
+
+<ResponseField name="title" type="string">
+    Video title
+</ResponseField>
+
+<ResponseField name="created" type="string">
+    Job creation timestamp
+</ResponseField>
+
+### In Progress Job Response
+
+For jobs that are still processing, the response will only include:
+
+<ResponseField name="id" type="string">
+    Unique identifier for the job
+</ResponseField>
+
+<ResponseField name="url" type="string">
+    The YouTube URL being converted
+</ResponseField>
+
+<ResponseField name="status" type="string">
+    Current job status (e.g., `CREATED`, `STARTED`, `PROCESSING`)
+</ResponseField>
+
+<RequestExample>
+
+```go Go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    jobId := "job_xyz789"
+    url := fmt.Sprintf("https://ytrss.xyz/api/v1/poll/job/%s", jobId)
+
+    resp, err := http.Get(url)
+    if err != nil {{
+        panic(err)
+    }}
+    defer resp.Body.Close()
+
+    var result map[string]interface{{}}
+    json.NewDecoder(resp.Body).Decode(&result)
+
+    fmt.Printf("Job ID: %s\n", result["id"])
+    fmt.Printf("Status: %s\n", result["status"])
+
+    if result["status"] == "SUCCESS" {
+        metadata := result["video_metadata"].(map[string]interface{})
+        fmt.Printf("Title: %s\n", metadata["title"])
+        fmt.Printf("Duration: %v seconds\n", metadata["duration"])
+        fmt.Printf("Download: %s\n", result["download_endpoint"])
+    }
+}
+```
+
+```javascript JavaScript
+const jobId = "job_xyz789";
+const response = await fetch(`https://ytrss.xyz/api/v1/poll/job/${jobId}`);
+
+const job = await response.json();
+
+console.log(`Job ID: ${job.id}`);
+console.log(`Status: ${job.status}`);
+
+if (job.status === "SUCCESS") {
+    console.log(`Title: ${job.video_metadata.title}`);
+    console.log(`Duration: ${job.video_metadata.duration} seconds`);
+    console.log(`Download: ${job.download_endpoint}`);
+}
+```
+
+```python Python
+import requests
+
+job_id = "job_xyz789"
+url = f"https://ytrss.xyz/api/v1/poll/job/{job_id}"
+
+response = requests.get(url)
+job = response.json()
+
+print(f"Job ID: {job['id']}")
+print(f"Status: {job['status']}")
+
+if job['status'] == 'SUCCESS':
+    metadata = job['video_metadata']
+    print(f"Title: {metadata['title']}")
+    print(f"Duration: {metadata['duration']} seconds")
+    print(f"Download: {job['download_endpoint']}")
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Completed Job
+{
+    "id": "job_xyz789",
+    "url": "https://youtube.com/watch?v=dQw4w9WgXcQ",
+    "status": "SUCCESS",
+    "download_endpoint": "/api/v1/download/job_xyz789",
+    "video_metadata": {
+        "title": "Rick Astley - Never Gonna Give You Up",
+        "description": "The official video for Rick Astley's 1987 hit...",
+        "duration": 213,
+        "video_id": "dQw4w9WgXcQ",
+        "size": 5242880
+    },
+    "title": "Rick Astley - Never Gonna Give You Up",
+    "created": "2024-01-15T10:05:00Z"
+}
+```
+
+```json Processing Job
+{
+    "id": "job_xyz789",
+    "url": "https://youtube.com/watch?v=dQw4w9WgXcQ",
+    "status": "PROCESSING"
+}
+```
+
+```json Pending Job
+{
+    "id": "job_xyz789",
+    "url": "https://youtube.com/watch?v=dQw4w9WgXcQ",
+    "status": "PENDING"
+}
+```
+
+```json Failed Job
+{
+    "id": "job_xyz789",
+    "url": "https://youtube.com/watch?v=invalid",
+    "status": "ERROR"
+}
+```
+
+</ResponseExample>
+
+## Job Statuses
+
+| Status       | Description                                                   |
+| ------------ | ------------------------------------------------------------- |
+| `CREATED`    | Job has been created and is waiting to be queued              |
+| `STARTED`    | Job is queued and waiting to be processed                     |
+| `PROCESSING` | Job is currently being processed                              |
+| `SUCCESS`    | Job has completed successfully and file is ready for download |
+| `ERROR`      | Job failed due to an error                                    |

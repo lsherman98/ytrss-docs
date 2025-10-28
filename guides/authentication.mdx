@@ -1,0 +1,39 @@
+---
+title: "Authentication"
+description: "Learn how to authenticate with the YouTube RSS API"
+---
+
+## API Authentication
+
+YouTube RSS uses API key authentication for all API requests. Your API key acts as both identification and authorization for your account.
+
+## Getting Your API Key
+
+### Step 1: Access Your Dashboard
+
+1. Log in to your YouTube RSS account at [ytrss.xyz](https://ytrss.xyz)
+2. Navigate to **API Keys**
+
+### Step 2: Generate an API Key
+
+1. Click **Generate Key**
+2. Provide a descriptive name for your key (e.g., "Production App", "Development")
+3. Click **Generate**
+
+### Step 3: Secure Your Key
+
+<Warning>
+    - Never expose your API key in client-side code - Store it securely using
+    environment variables - Rotate your keys regularly - Use different keys for
+    different environments (dev, staging, production)
+</Warning>
+
+## Using Your API Key
+
+Include your API key in the `Authorization` header using the Bearer token format:
+
+```bash
+curl -X GET https://api.youtuberss.com/v1/poll/job/1234 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```

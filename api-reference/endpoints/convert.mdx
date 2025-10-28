@@ -1,0 +1,80 @@
+---
+title: "Convert"
+api: "POST https://ytrss.xyz/api/v1/convert"
+description: "Convert YouTube videos to audio"
+---
+
+## Request
+
+Submit one or more YouTube URLs to be converted into audio files.
+
+### Endpoint
+
+```
+POST https://ytrss.xyz/api/v1/convert
+```
+
+### Body
+
+<ParamField body="urls" type="string[]" required>
+    An array of one or more YouTube video URLs to convert
+</ParamField>
+
+### Request Example
+
+```json
+{
+    "urls": [
+        "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "https://www.youtube.com/watch?v=jNQXAC9IVRw"
+    ]
+}
+```
+
+## Response
+
+<ResponseField name="batch_id" type="string">
+    Unique identifier for this batch of conversion jobs
+</ResponseField>
+
+<ResponseField name="message" type="string">
+    Status message describing the result
+</ResponseField>
+
+<ResponseField name="jobs" type="object[]">
+    Array of job objects representing each conversion task
+    <Expandable title="Job Object">
+        <ResponseField name="id" type="string">
+            Job ID used to poll status and download the converted content
+        </ResponseField>
+
+        <ResponseField name="url" type="string">
+            The original YouTube URL being converted
+        </ResponseField>
+
+        <ResponseField name="status" type="string">
+            Current job status. Will always be `CREATED` in the initial response
+        </ResponseField>
+    </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json 200 Success
+{
+  "batch_id": "batch_abc123xyz",
+  "message": "Conversion jobs created successfully",
+  "jobs": [
+    {
+      "id": "job_def456uvw",
+      "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "status": "CREATED"
+    },
+    {
+      "id": "job_ghi789rst",
+      "url": "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+      "status": "CREATED"
+    }
+  ]
+}
+```
+</ResponseExample>

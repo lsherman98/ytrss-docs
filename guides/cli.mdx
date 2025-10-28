@@ -1,0 +1,49 @@
+---
+title: "CLI Tool"
+description: "Use the YouTube RSS command-line interface"
+---
+
+## Getting Started
+
+### Generate an API Key
+
+Before installing the CLI, you'll need an API key:
+
+1. Visit [ytrss.xyz/keys](https://ytrss.xyz/keys)
+2. Click **Generate New API Key**
+3. Copy and save your API key securely
+
+## Installation
+
+### Install via Homebrew
+
+```bash
+brew install lsherman98/ytrss/ytrss
+```
+
+To uninstall:
+
+```bash
+brew uninstall ytrss
+```
+
+### Install via Go
+
+```bash
+go install github.com/lsherman98/yt-rss-cli@latest
+mv $HOME/go/bin/yt-rss-cli $HOME/go/bin/ytrss
+```
+
+To uninstall:
+
+```bash
+rm $HOME/go/bin/ytrss
+```
+
+## Running the CLI
+
+Once installed, you can run the CLI tool using:
+
+```bash
+ytrss
+```

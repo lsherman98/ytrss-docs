@@ -1,0 +1,255 @@
+---
+title: "Webhooks"
+description: "Set up real-time notifications for conversion job events"
+---
+
+## Overview
+
+Webhooks allow you to receive real-time notifications when conversion job events occur. Instead of polling for updates, your application will receive HTTP POST requests when jobs are created, started, completed, or encounter errors.
+
+## Setting Up Webhooks
+
+To set up a webhook endpoint:
+
+1. Go to [ytrss.xyz/webhooks](https://ytrss.xyz/webhooks)
+2. Enter your webhook URL
+3. Select which events you want to receive webhooks for
+4. Save your configuration
+
+**Important:** Make sure your endpoint accepts POST requests.
+
+You can enable, disable, or change which events you listen to at any time through the UI.
+
+## Webhook Events
+
+Webhooks are triggered on conversion job events. The following events are available:
+
+| Event     | Description                           |
+| --------- | ------------------------------------- |
+| `CREATED` | A new conversion job has been created |
+| `STARTED` | Job has started processing            |
+| `SUCCESS` | Job completed successfully            |
+| `ERROR`   | Job failed to complete                |
+
+### Batch Jobs
+
+When processing batch jobs, webhook events will be sent for each individual URL in the batch.
+
+## Webhook Payload
+
+Each webhook request is sent as an HTTP POST request with a JSON payload in the following format:
+
+| Field           | Type   | Description                                                 |
+| --------------- | ------ | ----------------------------------------------------------- |
+| `event`         | string | The event type: `CREATED`, `STARTED`, `SUCCESS`, or `ERROR` |
+| `data.job_id`   | string | The unique identifier for the conversion job                |
+| `data.batch_id` | string | The batch identifier                                        |
+| `data.error`    | string | Error message if the event is `ERROR`, otherwise blank      |
+
+### Example Payloads
+
+<Tabs>
+  <Tab title="Job Created">
+    ```json
+    {
+      "event": "CREATED",
+      "data": {
+        "job_id": "12345",
+        "batch_id": "98765",
+        "error": ""
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Job Started">
+    ```json
+    {
+      "event": "STARTED",
+      "data": {
+        "job_id": "12345",
+        "batch_id": "98765",
+        "error": ""
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Job Success">
+    ```json
+    {
+      "event": "SUCCESS",
+      "data": {
+        "job_id": "12345",
+        "batch_id": "98765",
+        "error": ""
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Job Error">
+    ```json
+    {
+      "event": "ERROR",
+      "data": {
+        "job_id": "job_12346",
+        "batch_id": "98765",
+        "error": "usage limit reached"
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Handling Webhook Requests
+
+Your webhook endpoint must accept POST requests and return a `200` status code to acknowledge receipt.
+
+<Tabs>
+  <Tab title="Go">
+    ```go
+    package main
+
+    import (
+        "encoding/json"
+        "fmt"
+        "log"
+        "net/http"
+    )
+
+    type WebhookPayload struct {
+        Event string `json:"event"`
+        Data  struct {
+            JobID   string `json:"job_id"`
+            BatchID string `json:"batch_id"`
+            Error   string `json:"error,omitempty"`
+        } `json:"data"`
+    }
+
+    func handleWebhook(w http.ResponseWriter, r *http.Request) {
+        var payload WebhookPayload
+        if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+            http.Error(w, "Bad request", http.StatusBadRequest)
+            return
+        }
+
+        switch payload.Event {
+        case "CREATED":
+            fmt.Printf("Job %s created\n", payload.Data.JobID)
+        case "STARTED":
+            fmt.Printf("Job %s started processing\n", payload.Data.JobID)
+        case "SUCCESS":
+            fmt.Printf("Job %s completed successfully\n", payload.Data.JobID)
+            // Make a request to the download API with the job_id
+            downloadFile(payload.Data.JobID)
+        case "ERROR":
+            fmt.Printf("Job %s failed: %s\n", payload.Data.JobID, payload.Data.Error)
+        }
+
+        w.WriteHeader(http.StatusOK)
+        w.Write([]byte("OK"))
+    }
+
+    func downloadFile(jobID string) {
+        // Make a request to the download API
+        // See API documentation for details
+    }
+
+    func main() {
+        http.HandleFunc("/webhooks/ytrss", handleWebhook)
+        log.Println("Webhook server running on port 3000")
+        log.Fatal(http.ListenAndServe(":3000", nil))
+    }
+    ```
+
+  </Tab>
+  <Tab title="Node.js">
+    ```javascript
+    const express = require("express");
+    const app = express();
+
+    app.use(express.json());
+
+    app.post("/webhooks/ytrss", (req, res) => {
+        const { event, data } = req.body;
+        const { job_id, batch_id, error } = data;
+
+        switch (event) {
+            case "CREATED":
+                console.log(`Job ${job_id} created`);
+                break;
+            case "STARTED":
+                console.log(`Job ${job_id} started processing`);
+                break;
+            case "SUCCESS":
+                console.log(`Job ${job_id} completed successfully`);
+                // Make a request to the download API with the job_id
+                downloadFile(job_id);
+                break;
+            case "ERROR":
+                console.log(`Job ${job_id} failed: ${error}`);
+                break;
+        }
+
+        res.status(200).send("OK");
+    });
+
+    function downloadFile(jobId) {
+        // Make a request to the download API
+        // See API documentation for details
+    }
+
+    app.listen(3000, () => {
+        console.log("Webhook server running on port 3000");
+    });
+    ```
+
+  </Tab>
+</Tabs>
+
+## Retry Logic
+
+If your webhook endpoint does not return a `200` status code, the system will automatically retry the webhook delivery with exponential backoff.
+
+### Retry Schedule
+
+The webhook will be retried **3 times** with the following delays:
+
+1. **30 seconds** - First retry after 30 seconds
+2. **1 minute** - Second retry after 1 minute
+3. **5 minutes** - Third and final retry after 5 minutes
+
+After all retry attempts are exhausted, the webhook delivery will be marked as failed.
+
+**Important:** Make sure your endpoint returns a `200` status code to acknowledge successful receipt and prevent unnecessary retries.
+
+## Downloading Completed Jobs
+
+When you receive a webhook with the `SUCCESS` event, you can use the `job_id` to download the converted file.
+
+Make a request to the download API endpoint with the job ID:
+
+```bash
+curl -X GET https://api.ytrss.xyz/v1/download/{jobId} \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+See the [Download Job API documentation](/api-reference/endpoints/download) for more details.
+
+## Testing Webhooks
+
+### Local Development with ngrok
+
+For testing webhooks locally, use ngrok to expose your local server:
+
+```bash
+# Install ngrok
+brew install ngrok
+
+# Expose local server
+ngrok http 3000
+
+# Use the generated URL as your webhook endpoint
+# https://abc123.ngrok.io/webhooks/ytrss
+```

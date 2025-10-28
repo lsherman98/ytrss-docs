@@ -1,0 +1,54 @@
+---
+title: "Download Video"
+api: "GET https://ytrss.xyz/api/v1/download/{jobId}"
+description: "Download a processed video file"
+---
+
+## Overview
+
+This endpoint allows you to download a video file after it has been successfully processed. The download is only available when the job status is `SUCCESS`.
+
+## Path Parameters
+
+<ParamField path="jobId" type="string" required>
+    The unique identifier of the download job. This ID is returned when you
+    create a new conversion job.
+</ParamField>
+
+## Response
+
+The video file is returned as a binary blob with the appropriate content type (e.g.,
+`video/mp4`, `audio/mp3`).
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://ytrss.xyz/api/v1/download/abc123xyz" \
+  -o video.mp4
+```
+
+```javascript JavaScript
+const jobId = "abc123xyz";
+const response = await fetch(`https://ytrss.xyz/api/v1/download/${jobId}`);
+
+if (response.ok) {
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "video.mp4";
+    a.click();
+}
+```
+
+```python Python
+import requests
+
+job_id = 'abc123xyz'
+response = requests.get(f'https://ytrss.xyz/api/v1/download/{job_id}')
+
+if response.status_code == 200:
+    with open('video.mp4', 'wb') as f:
+        f.write(response.content)
+```
+
+</RequestExample>

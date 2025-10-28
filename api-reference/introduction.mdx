@@ -1,33 +1,57 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: "Introduction"
+description: "Welcome to the YouTube RSS API"
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+## Welcome to the YouTube RSS API
 
-## Welcome
+The YouTube RSS API provides programmatic access to convert YouTube videos into audio. Our REST API enables you to integrate YouTube-to-audio conversion into your applications, automate feed management, and build custom podcast solutions.
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+## Base URL
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+All API requests should be made to:
+
+```
+https://ytrss.xyz/api/v1
+```
 
 ## Authentication
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+The YouTube RSS API uses API key authentication. Include your API key in the `Authorization` header:
 
-```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
+```bash
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://ytrss.xyz/api/v1/poll/job/1234
+```
+
+<Card title="Get Your API Key" icon="key" href="/guides/authentication">
+    Learn how to obtain and use your API key
+</Card>
+
+## Quick Start
+
+### 1. Convert a YouTube Video
+
+
+```bash
+curl -X POST https://ytrss.xyz/v1/convert \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "urls": ["https://youtube.com/watch?v=VIDEO_ID"],
+  }'
+```
+
+### 2. Check Job Status
+
+```bash
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://ytrss.xyz/v1/poll/job/{jobId}
+```
+
+### 3. Download Audio
+
+```bash
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://ytrss.xyz/v1/download/{jobId}
 ```
