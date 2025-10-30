@@ -61,7 +61,6 @@ Each webhook request is sent as an HTTP POST request with a JSON payload in the 
     }
     ```
   </Tab>
-
   <Tab title="Job Started">
     ```json
     {
@@ -74,7 +73,6 @@ Each webhook request is sent as an HTTP POST request with a JSON payload in the 
     }
     ```
   </Tab>
-
   <Tab title="Job Success">
     ```json
     {
@@ -87,7 +85,6 @@ Each webhook request is sent as an HTTP POST request with a JSON payload in the 
     }
     ```
   </Tab>
-
   <Tab title="Job Error">
     ```json
     {
@@ -110,14 +107,14 @@ Your webhook endpoint must accept POST requests and return a `200` status code t
   <Tab title="Go">
     ```go
     package main
-
+    
     import (
         "encoding/json"
         "fmt"
         "log"
         "net/http"
     )
-
+    
     type WebhookPayload struct {
         Event string `json:"event"`
         Data  struct {
@@ -126,14 +123,14 @@ Your webhook endpoint must accept POST requests and return a `200` status code t
             Error   string `json:"error,omitempty"`
         } `json:"data"`
     }
-
+    
     func handleWebhook(w http.ResponseWriter, r *http.Request) {
         var payload WebhookPayload
         if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
             http.Error(w, "Bad request", http.StatusBadRequest)
             return
         }
-
+    
         switch payload.Event {
         case "CREATED":
             fmt.Printf("Job %s created\n", payload.Data.JobID)
@@ -142,39 +139,32 @@ Your webhook endpoint must accept POST requests and return a `200` status code t
         case "SUCCESS":
             fmt.Printf("Job %s completed successfully\n", payload.Data.JobID)
             // Make a request to the download API with the job_id
-            downloadFile(payload.Data.JobID)
         case "ERROR":
             fmt.Printf("Job %s failed: %s\n", payload.Data.JobID, payload.Data.Error)
         }
-
+    
         w.WriteHeader(http.StatusOK)
         w.Write([]byte("OK"))
     }
-
-    func downloadFile(jobID string) {
-        // Make a request to the download API
-        // See API documentation for details
-    }
-
+    
     func main() {
         http.HandleFunc("/webhooks/ytrss", handleWebhook)
         log.Println("Webhook server running on port 3000")
         log.Fatal(http.ListenAndServe(":3000", nil))
     }
     ```
-
   </Tab>
   <Tab title="Node.js">
     ```javascript
     const express = require("express");
     const app = express();
-
+    
     app.use(express.json());
-
+    
     app.post("/webhooks/ytrss", (req, res) => {
         const { event, data } = req.body;
         const { job_id, batch_id, error } = data;
-
+    
         switch (event) {
             case "CREATED":
                 console.log(`Job ${job_id} created`);
@@ -191,20 +181,19 @@ Your webhook endpoint must accept POST requests and return a `200` status code t
                 console.log(`Job ${job_id} failed: ${error}`);
                 break;
         }
-
+    
         res.status(200).send("OK");
     });
-
+    
     function downloadFile(jobId) {
         // Make a request to the download API
         // See API documentation for details
     }
-
+    
     app.listen(3000, () => {
         console.log("Webhook server running on port 3000");
     });
     ```
-
   </Tab>
 </Tabs>
 
